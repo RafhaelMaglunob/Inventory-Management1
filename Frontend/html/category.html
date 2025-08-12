@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../css/category.css" />
+    <title>Category Management</title>
+</head>
+<body>
+
+  <aside id="sidebar-placeholder"></aside>
+
+  <main class="content">
+    <h1>Category Management</h1>
+
+    <!-- Add / Update Category Form -->
+    <section>
+      <h2 id="form-title">Add New Category</h2>
+      <form id="category-form">
+        <input type="hidden" id="category-id" />
+        <input type="text" id="category-name" placeholder="Category Name" required />
+        <textarea id="category-description" placeholder="Description (optional)"></textarea>
+        <button type="submit">Save Category</button>
+        <button type="button" id="cancel-edit" style="display:none;">Cancel</button>
+      </form>
+    </section>
+
+    <!-- Categories List -->
+    <section>
+      <h2>Existing Categories</h2>
+      <table id="categories-table" border="1" cellpadding="8" cellspacing="0" style="width: 100%; max-width: 700px;">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="categories-tbody">
+          <tr><td colspan="3" style="text-align:center;">Loading categories...</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+<script>
+  // Load sidebar
+  async function loadSidebar() {
+    try {
+      const res = await fetch('sidebar.html');
+      if (!res.ok) throw new Error('Failed to load sidebar');
+      const html = await res.text();
+      document.getElementById('sidebar-placeholder').innerHTML = html;
+    } catch (err) {
+      console.error(err);
+      document.getElementById('sidebar-placeholder').innerHTML = '<p>Failed to load sidebar</p>';
+    }
+  }
+
+  // Fetch categories from API
+  async function loadCategories() {
+    try {
+      const res = await fetch('http://localhost:3000/api/categories');
+      if (!res.ok) throw new Error('Failed to load categories');
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Unknown error');
+
+      const tbody = document.getElementById('categories-tbody');
+      tbody.innerHTML = '';
+      if (data.data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No categories found</td></tr>';
+        return;
+      }
+
+      data.data.forEach(cat => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${cat.name}</td>
+          <td>${cat.description || ''}</td>
+          <td>
+            <button data-id="${cat.id}" data-name="${cat.name}" data-description="${cat.description || ''}" class="edit-btn">Edit</button>
+            <button data-id="${cat.id}" class="delete-btn">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  // Add or Update category
+  async function submitCategory(e) {
+    e.preventDefault();
+
+    const id = document.getElementById('category-id').value.trim();
+    const name = document.getElementById('category-name').value.trim();
+    const description = document.getElementById('category-description').value.trim();
+
+    if (!name) return alert('Category name is required');
+
+    const url = id ? `http://localhost:3000/api/categories/${id}` : 'http://localhost:3000/api/categories';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name, description })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to save category');
+
+      alert(`Category ${id ? 'updated' : 'added'} successfully`);
+
+      resetForm();
+      loadCategories();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  // Delete category
+  async function deleteCategory(id) {
+    if (!confirm('Are you sure you want to delete this category?')) return;
+    try {
+      const res = await fetch(`http://localhost:3000/api/categories/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to delete category');
+      alert('Category deleted');
+      loadCategories();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  // Reset form to default state
+  function resetForm() {
+    document.getElementById('category-id').value = '';
+    document.getElementById('category-name').value = '';
+    document.getElementById('category-description').value = '';
+    document.getElementById('form-title').textContent = 'Add New Category';
+    document.getElementById('cancel-edit').style.display = 'none';
+  }
+
+  // Handle clicks on Edit/Delete buttons using event delegation
+  document.getElementById('categories-tbody').addEventListener('click', e => {
+    if (e.target.classList.contains('edit-btn')) {
+      const btn = e.target;
+      document.getElementById('category-id').value = btn.dataset.id;
+      document.getElementById('category-name').value = btn.dataset.name;
+      document.getElementById('category-description').value = btn.dataset.description;
+      document.getElementById('form-title').textContent = 'Edit Category';
+      document.getElementById('cancel-edit').style.display = 'inline-block';
+    } else if (e.target.classList.contains('delete-btn')) {
+      deleteCategory(e.target.dataset.id);
+    }
+  });
+
+  // Cancel editing
+  document.getElementById('cancel-edit').addEventListener('click', resetForm);
+
+  // Form submit
+  document.getElementById('category-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = document.getElementById('category-name').value.trim();
+    const description = document.getElementById('category-description').value.trim();
+
+    if (!name) return alert('Category name is required');
+
+    const newId = name.toLowerCase().replace(/\s+/g, '-');
+    console.log('Creating category with id:', newId);  // <== Here
+
+    try {
+      const res = await fetch('http://localhost:3000/api/categories', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ id: newId, name, description })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to add category');
+      }
+      alert('Category added successfully');
+      // You can reset form or reload categories here
+    } catch(err) {
+      alert(err.message);
+    }
+  });
+
+  // Initialize page
+  loadSidebar();
+  loadCategories();
+</script>
+</body>
+</html>

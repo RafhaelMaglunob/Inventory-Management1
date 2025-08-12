@@ -1,0 +1,115 @@
+* {
+    box-sizing: border-box;
+}
+body, html {
+    margin: 0; padding: 0;
+    height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f6f8;
+    display: flex;
+    min-height: 100vh;
+}
+.sidebar {
+    width: 220px;
+    background-color: #2f4050;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    flex-shrink: 0;
+}
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+.nav-link {
+    padding: 15px 25px;
+    color: #cfd8dc;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.3s;
+    cursor: pointer;
+    display: block;
+}
+.nav-link:hover, .nav-link.active {
+    background-color: #1c2833;
+    color: #fff;
+}
+main.content {
+    flex: 1;
+    padding: 30px 40px;
+    overflow-y: auto;
+    max-width: 800px;
+}
+h1, h2, h3 {
+    color: #333;
+}
+form {
+    margin-bottom: 40px;
+    max-width: 600px;
+}
+form input, form select, form button {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+form input:focus, form select:focus {
+    border-color: #4a90e2;
+    outline: none;
+    box-shadow: 0 0 5px rgba(74,144,226,0.5);
+}
+form button {
+    background-color: #4a90e2;
+    color: white;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+}
+form button:hover {
+    background-color: #357abd;
+}
+select#supplier-select {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    background-color: white;
+    cursor: pointer;
+    appearance: none; /* Removes native dropdown arrow in some browsers */
+}
+
+select#supplier-select:focus {
+    border-color: #4a90e2;
+    outline: none;
+    box-shadow: 0 0 5px rgba(74,144,226,0.5);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    max-width: 800px;
+    margin-top: 15px;
+}
+table thead tr {
+    background-color: #4a90e2;
+    color: white;
+}
+table th, table td {
+    text-align: left;
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+}
+.no-data {
+    color: #888;
+    font-style: italic;
+    text-align: center;
+}

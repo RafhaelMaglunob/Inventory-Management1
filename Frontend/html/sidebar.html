@@ -1,0 +1,67 @@
+
+<style>
+    body, html {
+        margin: 0; padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f4f6f8;
+        display: flex;
+        height: 100vh;
+    }
+    .sidebar {
+        width: 220px;
+        background-color: #2f4050;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        padding: 20px 0;
+        flex-shrink: 0;
+    }
+    .sidebar h2 {
+        text-align: center;
+        margin-bottom: 30px;
+        font-weight: 700;
+        letter-spacing: 2px;
+    }
+    .nav-link {
+        padding: 15px 25px;
+        color: #cfd8dc;
+        text-decoration: none;
+        font-weight: 600;
+        transition: background 0.3s;
+        cursor: pointer;
+        display: block;
+    }
+    .nav-link:hover, .nav-link.active {
+        background-color: #1c2833;
+        color: #fff;
+    }
+    .topbar {
+        background-color: #fff;
+        height: 60px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0 20px;
+    }
+    .profile {
+        font-weight: 600;
+        color: #555;
+    }
+</style>
+</head>
+<body>
+<aside class="sidebar">
+<h2>IMS</h2>
+<nav>
+    <a href="category.html" class="nav-link" id="link-category">Category</a>
+    <a href="inventory.html" class="nav-link" id="link-inventory">Inventory</a>
+    <a href="profile.html" class="nav-link" id="link-profile">Profile</a>
+    <a href="supplier.html" class="nav-link" id="link-supplier">Supplier</a>
+    <a href="transaction.html" class="nav-link" id="link-transaction">Transaction</a>
+    <a href="login.html" class="nav-link" style="margin-top: auto; color: #ff6b6b;">Logout</a>
+</nav>
+</aside>
+<div class="topbar">
+<div class="profile">Welcome, Admin</div>
+</div>

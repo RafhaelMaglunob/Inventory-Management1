@@ -1,0 +1,116 @@
+body, html {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f6f8;
+    display: flex;
+    min-height: 100vh;
+    color: #333;
+}
+aside.sidebar {
+    width: 220px;
+    background-color: #2f4050;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    flex-shrink: 0;
+}
+main.content {
+    flex: 1;
+    padding: 30px 40px;
+    overflow-y: auto;
+    max-width: 900px;
+    background: white;
+    margin: 20px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgb(0 0 0 / 0.1);
+}
+h1, h2 {
+    margin-bottom: 20px;
+    color: #222;
+}
+form {
+    max-width: 600px;
+    margin-bottom: 40px;
+}
+form input[type="text"], form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    resize: vertical;
+    font-family: inherit;
+}
+form input[type="text"]:focus, form textarea:focus {
+    border-color: #4a90e2;
+    outline: none;
+    box-shadow: 0 0 5px rgba(74,144,226,0.5);
+}
+form button {
+    background-color: #4a90e2;
+    color: white;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    margin-right: 10px;
+}
+form button:hover {
+    background-color: #357abd;
+}
+#cancel-edit {
+    background-color: #ef4444;
+}
+#cancel-edit:hover {
+    background-color: #b91c1c;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    max-width: 900px;
+    box-shadow: 0 0 8px rgb(0 0 0 / 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+}
+thead tr {
+    background-color: #4a90e2;
+    color: white;
+}
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    vertical-align: middle;
+}
+tbody tr:hover {
+    background-color: #f1f9ff;
+}
+.no-data {
+    text-align: center;
+    color: #888;
+    font-style: italic;
+}
+.actions button {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    margin-right: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s;
+}
+.actions button.delete {
+    background-color: #ef4444;
+}
+.actions button:hover {
+    opacity: 0.85;
+}
