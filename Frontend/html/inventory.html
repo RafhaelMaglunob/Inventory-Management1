@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inventory Management</title>
+<style>
+  body, html {
+    margin: 0; padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f4f6f8;
+    display: flex;
+    height: 100vh;
+  }
+  .sidebar {
+    width: 220px;
+    background-color: #2f4050;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    flex-shrink: 0;
+    height: 100vh;
+  }
+  .sidebar h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+  .nav-link {
+    padding: 15px 25px;
+    color: #cfd8dc;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.3s;
+    cursor: pointer;
+    display: block;
+  }
+  .nav-link:hover, .nav-link.active {
+    background-color: #1c2833;
+    color: #fff;
+  }
+  .topbar {
+    background-color: #fff;
+    height: 60px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 20px;
+    flex-shrink: 0;
+    width: calc(100% - 220px);
+    box-sizing: border-box;
+    position: fixed;
+    top: 0;
+    left: 220px;
+    z-index: 1000;
+  }
+  .profile {
+    font-weight: 600;
+    color: #555;
+  }
+  main.content {
+    margin-top: 60px;
+    padding: 20px;
+    width: calc(100% - 220px);
+    overflow-y: auto;
+    height: calc(100vh - 60px);
+    box-sizing: border-box;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+  }
+  th {
+    background-color: #eee;
+  }
+  select {
+    padding: 5px;
+    font-size: 1em;
+    margin-bottom: 15px;
+  }
+  .no-data {
+    text-align: center;
+    color: #666;
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <h2>IMS</h2>
+  <nav>
+    <a href="category.html" class="nav-link" id="link-category">Category</a>
+    <a href="inventory.html" class="nav-link active" id="link-inventory">Inventory</a>
+    <a href="profile.html" class="nav-link" id="link-profile">Profile</a>
+    <a href="supplier.html" class="nav-link" id="link-supplier">Supplier</a>
+    <a href="transaction.html" class="nav-link" id="link-transaction">Transaction</a>
+    <a href="login.html" class="nav-link" style="margin-top: auto; color: #ff6b6b;">Logout</a>
+  </nav>
+</aside>
+
+<div class="topbar">
+  <div class="profile">Welcome, Admin</div>
+</div>
+
+<main class="content">
+  <h1>Inventory</h1>
+
+  <label for="supplier-filter">Filter by Supplier:</label>
+  <select id="supplier-filter">
+    <option value="">All Suppliers</option>
+  </select>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Price</th>
+        <th>Quantity</th>
+        <th>Supplier</th>
+      </tr>
+    </thead>
+    <tbody id="inventory-tbody">
+      <tr><td colspan="5" class="no-data">Loading inventory...</td></tr>
+    </tbody>
+  </table>
+</main>
+
+<script>
+  let suppliersMap = {};
+
+  async function loadSuppliers() {
+    try {
+      const res = await fetch('http://localhost:3000/api/suppliers');
+      if (!res.ok) throw new Error('Failed to load suppliers');
+      const data = await res.json();
+      const suppliers = data.data || [];
+      const select = document.getElementById('supplier-filter');
+      suppliersMap = {};
+      select.innerHTML = '<option value="">All Suppliers</option>';
+      suppliers.forEach(s => {
+        suppliersMap[s.id] = s.name;
+        const option = document.createElement('option');
+        option.value = s.id;
+        option.textContent = s.name;
+        select.appendChild(option);
+      });
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  async function loadInventory(supplierId = '') {
+    try {
+      const url = supplierId ? `http://localhost:3000/api/inventory?supplier=${supplierId}` : 'http://localhost:3000/api/inventory';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to load inventory');
+      const data = await res.json();
+      const items = data.data || [];
+
+      const tbody = document.getElementById('inventory-tbody');
+      tbody.innerHTML = '';
+
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="no-data">No inventory items found.</td></tr>';
+        return;
+      }
+
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.category}</td>
+          <td>${item.price.toFixed(2)}</td>
+          <td>${item.quantity}</td>
+          <td>${suppliersMap[item.supplierId] || item.supplierId}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  document.getElementById('supplier-filter').addEventListener('change', (e) => {
+    loadInventory(e.target.value);
+  });
+
+  async function init() {
+    await loadSuppliers();
+    await loadInventory();
+  }
+
+  init();
+</script>
+
+</body>
+</html>

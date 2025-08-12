@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../css/dashboard.css">
+<title>Inventory Management Dashboard</title>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <h2>IMS</h2>
+        <nav>
+        <a href="#" class="nav-link active" data-route="category">Category</a>
+        <a href="#" class="nav-link" data-route="inventory">Inventory</a>
+        <a href="#" class="nav-link" data-route="profile">Profile</a>
+        <a href="#" class="nav-link" data-route="supplier">Supplier</a>
+        <a href="#" class="nav-link" data-route="transaction">Transaction</a>
+        <a href="#" id="logout" class="nav-link" style="margin-top: auto; color: #ff6b6b;">Logout</a>
+        </nav>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+        <div class="profile">Welcome, Admin</div>
+        </header>
+
+        <main class="content" id="app-content">
+        <!-- Content loads here -->
+        </main>
+    </div>
+
+<script>
+  // Simple UUID generator for IDs (v4-like)
+    function uuidv4() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+        });
+    }
+
+    const templates = {
+        category: `
+        <h1>Category Management</h1>
+        <form id="category-form">
+            <div class="message" id="category-msg"></div>
+            <label for="cat-name">Category Name</label>
+            <input type="text" id="cat-name" placeholder="Enter category name" />
+            <button type="submit">Add Category</button>
+        </form>
+        <h2>Existing Categories</h2>
+        <table>
+            <thead><tr><th>ID</th><th>Name</th></tr></thead>
+            <tbody id="category-list"></tbody>
+        </table>
+        `,
+        inventory: `
+        <h1>Inventory Management</h1>
+        <form id="inventory-form">
+            <div class="message" id="inventory-msg"></div>
+            <label for="item-name">Item Name</label>
+            <input type="text" id="item-name" placeholder="Enter item name" />
+            <label for="item-category">Category</label>
+            <select id="item-category">
+            <option value="">Select category</option>
+            </select>
+            <label for="item-qty">Quantity</label>
+            <input type="number" id="item-qty" placeholder="Enter quantity" />
+            <button type="submit">Add Item</button>
+        </form>
+        <h2>Current Inventory</h2>
+        <table>
+            <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Qty</th></tr></thead>
+            <tbody id="inventory-list"></tbody>
+        </table>
+        `,
+        profile: `
+        <h1>User Profile</h1>
+        <form id="profile-form">
+            <div class="message" id="profile-msg"></div>
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="Username" />
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="Email" />
+            <button type="submit">Update Profile</button>
+        </form>
+        `,
+        supplier: `
+        <h1>Supplier Management</h1>
+        <form id="supplier-form">
+            <div class="message" id="supplier-msg"></div>
+            <label for="supplier-name">Supplier Name</label>
+            <input type="text" id="supplier-name" placeholder="Enter supplier name" />
+            <label for="supplier-contact">Contact Number</label>
+            <input type="text" id="supplier-contact" placeholder="Enter contact number" />
+            <button type="submit">Add Supplier</button>
+        </form>
+        <h2>Suppliers List</h2>
+        <table>
+            <thead><tr><th>ID</th><th>Name</th><th>Contact</th></tr></thead>
+            <tbody id="supplier-list"></tbody>
+        </table>
+        `,
+        transaction: `
+        <h1>Transactions</h1>
+        <form id="transaction-form">
+            <div class="message" id="transaction-msg"></div>
+            <label for="trans-type">Transaction Type</label>
+            <select id="trans-type">
+            <option value="sale">Sale</option>
+            <option value="purchase">Purchase</option>
+            </select>
+            <label for="trans-item">Item</label>
+            <input type="text" id="trans-item" placeholder="Enter item name" />
+            <label for="trans-qty">Quantity</label>
+            <input type="number" id="trans-qty" placeholder="Enter quantity" />
+            <button type="submit">Add Transaction</button>
+        </form>
+        <h2>Transaction History</h2>
+        <table>
+            <thead><tr><th>ID</th><th>Type</th><th>Item</th><th>Quantity</th></tr></thead>
+            <tbody id="transaction-list"></tbody>
+        </table>
+        `
+    };
+
+    const navLinks = document.querySelectorAll('.nav-link');
+    const appContent = document.getElementById('app-content');
+
+    // Cache categories for dropdowns & lookups
+    let categoriesCache = [];
+
+    async function fetchJSON(url, options) {
+        try {
+        const res = await fetch(url, options);
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.message || 'Request failed');
+        }
+        return await res.json();
+        } catch (err) {
+        throw err;
+        }
+    }
+
+    async function loadCategories() {
+        try {
+        const categories = await fetchJSON('http://localhost:3000/api/categories');
+        categoriesCache = categories;
+
+        const tbody = document.getElementById('category-list');
+        tbody.innerHTML = '';
+        categories.forEach(cat => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${cat.id}</td><td>${cat.name}</td>`;
+            tbody.appendChild(tr);
+        });
+        } catch (err) {
+        showMessage('category-msg', err.message);
+        }
+    }
+
+    async function addCategory(name) {
+        const id = uuidv4();
+        await fetchJSON('http://localhost:3000/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name }),
+        });
+    }
+
+    async function loadInventory() {
+        try {
+        const select = document.getElementById('item-category');
+        select.innerHTML = `<option value="">Select category</option>`;
+        categoriesCache.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat.id;
+            opt.textContent = cat.name;
+            select.appendChild(opt);
+        });
+
+        const items = await fetchJSON('http://localhost:3000/api/inventory');
+        const tbody = document.getElementById('inventory-list');
+        tbody.innerHTML = '';
+        items.forEach(item => {
+            const catName = categoriesCache.find(c => c.id === item.categoryId)?.name || '-';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${item.id}</td><td>${item.name}</td><td>${catName}</td><td>${item.quantity}</td>`;
+            tbody.appendChild(tr);
+        });
+        } catch (err) {
+        showMessage('inventory-msg', err.message);
+        }
+    }
+
+    async function addInventory(item) {
+        await fetchJSON('http://localhost:3000/api/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+        });
+    }
+
+    async function loadProfile() {
+        try {
+        const profile = await fetchJSON('http://localhost:3000/api/profile');
+        document.getElementById('username').value = profile.username || '';
+        document.getElementById('email').value = profile.email || '';
+        } catch (err) {
+        showMessage('profile-msg', err.message);
+        }
+    }
+
+    async function updateProfile(profile) {
+        await fetchJSON('http://localhost:3000/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile),
+        });
+    }
+
+    async function loadSuppliers() {
+        try {
+        const suppliers = await fetchJSON('http://localhost:3000/api/suppliers');
+        const tbody = document.getElementById('supplier-list');
+        tbody.innerHTML = '';
+        suppliers.forEach(sup => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${sup.id}</td><td>${sup.name}</td><td>${sup.contact}</td>`;
+            tbody.appendChild(tr);
+        });
+        } catch (err) {
+        showMessage('supplier-msg', err.message);
+        }
+    }
+
+    async function addSupplier(supplier) {
+        const id = uuidv4();
+        await fetchJSON('http://localhost:3000/api/suppliers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...supplier }),
+        });
+    }
+
+    async function loadTransactions() {
+        try {
+        const transactions = await fetchJSON('http://localhost:3000/api/transactions');
+        const tbody = document.getElementById('transaction-list');
+        tbody.innerHTML = '';
+        transactions.forEach(tx => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${tx.id}</td><td>${capitalize(tx.type)}</td><td>${tx.item}</td><td>${tx.quantity}</td>`;
+            tbody.appendChild(tr);
+        });
+        } catch (err) {
+        showMessage('transaction-msg', err.message);
+        }
+    }
+
+    async function addTransaction(transaction) {
+        const id = uuidv4();
+        await fetchJSON('http://localhost:3000/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...transaction }),
+        });
+    }
+
+    function showMessage(elementId, msg) {
+        const el = document.getElementById(elementId);
+        if (el) {
+        el.textContent = msg;
+        setTimeout(() => el.textContent = '', 4000);
+        }
+    }
+
+    function capitalize(str) {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    async function handleCategory() {
+        await loadCategories();
+        document.getElementById('category-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const input = document.getElementById('cat-name');
+        const name = input.value.trim();
+        if (!name) {
+            showMessage('category-msg', 'Category name is required');
+            return;
+        }
+        try {
+            await addCategory(name);
+            input.value = '';
+            await loadCategories();
+        } catch (err) {
+            showMessage('category-msg', err.message);
+        }
+        });
+    }
+
+    async function handleInventory() {
+        if (categoriesCache.length === 0) {
+        await loadCategories();
+        }
+        await loadInventory();
+        document.getElementById('inventory-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const name = document.getElementById('item-name').value.trim();
+        const categoryId = document.getElementById('item-category').value;
+        const quantity = parseInt(document.getElementById('item-qty').value, 10);
+        if (!name || !categoryId || isNaN(quantity) || quantity < 0) {
+            showMessage('inventory-msg', 'Please fill all fields correctly');
+            return;
+        }
+        try {
+            const id = uuidv4();
+            await addInventory({ id, name, categoryId, quantity });
+            document.getElementById('item-name').value = '';
+            document.getElementById('item-category').value = '';
+            document.getElementById('item-qty').value = '';
+            await loadInventory();
+        } catch (err) {
+            showMessage('inventory-msg', err.message);
+        }
+        });
+    }
+
+    async function handleProfile() {
+        await loadProfile();
+        document.getElementById('profile-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        if (!username || !email) {
+            showMessage('profile-msg', 'Username and email are required');
+            return;
+        }
+        try {
+            await updateProfile({ username, email });
+            showMessage('profile-msg', 'Profile updated successfully');
+        } catch (err) {
+            showMessage('profile-msg', err.message);
+        }
+        });
+    }
+
+    async function handleSupplier() {
+        await loadSuppliers();
+        document.getElementById('supplier-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const name = document.getElementById('supplier-name').value.trim();
+        const contact = document.getElementById('supplier-contact').value.trim();
+        if (!name || !contact) {
+            showMessage('supplier-msg', 'Supplier name and contact are required');
+            return;
+        }
+        try {
+            await addSupplier({ name, contact });
+            document.getElementById('supplier-name').value = '';
+            document.getElementById('supplier-contact').value = '';
+            await loadSuppliers();
+        } catch (err) {
+            showMessage('supplier-msg', err.message);
+        }
+        });
+    }
+
+    async function handleTransaction() {
+        await loadTransactions();
+        document.getElementById('transaction-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const type = document.getElementById('trans-type').value;
+        const item = document.getElementById('trans-item').value.trim();
+        const quantity = parseInt(document.getElementById('trans-qty').value, 10);
+        if (!item || isNaN(quantity) || quantity <= 0) {
+            showMessage('transaction-msg', 'Please fill all fields correctly');
+            return;
+        }
+        try {
+            await addTransaction({ type, item, quantity });
+            document.getElementById('trans-item').value = '';
+            document.getElementById('trans-qty').value = '';
+            await loadTransactions();
+        } catch (err) {
+            showMessage('transaction-msg', err.message);
+        }
+        });
+  }
+
+    function loadRoute(route) {
+        navLinks.forEach(link => link.classList.remove('active'));
+        const activeLink = Array.from(navLinks).find(link => link.dataset.route === route);
+        if (activeLink) activeLink.classList.add('active');
+        appContent.innerHTML = templates[route] || "<h1>Page Not Found</h1>";
+
+        switch(route) {
+        case 'category': handleCategory(); break;
+        case 'inventory': handleInventory(); break;
+        case 'profile': handleProfile(); break;
+        case 'supplier': handleSupplier(); break;
+        case 'transaction': handleTransaction(); break;
+        }
+    }
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', e => {
+        e.preventDefault();
+        if(link.id === 'logout') {
+            // Clear any auth/session data here if needed
+            window.location.href = 'login.html';
+            return;
+        }
+        loadRoute(link.dataset.route);
+        });
+    });
+
+  // Load default page
+  loadRoute('category');
+</script>
+
+</body>
+</html>

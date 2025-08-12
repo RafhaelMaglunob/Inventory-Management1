@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="../css/login.css">
+  <title>Login with WebSocket</title>
+</head>
+<body>
+
+  <div class="login-container">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="Email" required autocomplete="username" />
+      <input type="password" id="password" placeholder="Password" required autocomplete="current-password" />
+      <button type="submit">Login</button>
+    </form>
+
+    <h3 style="margin-top: 30px; font-weight: 600; color: #666;">WebSocket Messages:</h3>
+    <div id="messages" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 8px;"></div>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const messagesDiv = document.getElementById('messages');
+    let socket;
+
+    function addMessage(msg) {
+        const p = document.createElement('p');
+        p.textContent = msg;
+        messagesDiv.appendChild(p);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+
+        try {
+          const res = await fetch('http://localhost:3000/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password })
+          });
+
+          const data = await res.json();
+
+          if (res.ok && data.success) {
+              addMessage('Login successful! Connecting to WebSocket...');
+
+              // Use correct WebSocket URL here (adjust if your server uses different path)
+              socket = new WebSocket('ws://localhost:3000/ws');
+
+              socket.onopen = () => {
+                addMessage('WebSocket connected');
+                socket.send(JSON.stringify({ type: 'login', email }));
+              };
+
+              socket.onmessage = (event) => {
+                addMessage('Server: ' + event.data);
+                // Optional: redirect after receiving a certain message
+                // Example: if server sends a "welcome" message, then redirect
+                if (event.data.includes('welcome')) {
+                  setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                  }, 1000); // wait 1 second before redirect
+                }
+              };
+
+              socket.onclose = (event) => {
+                addMessage('WebSocket connection closed');
+                if (!event.wasClean) {
+                  addMessage('Connection closed unexpectedly');
+                }
+              };
+
+              socket.onerror = (err) => {
+                addMessage('WebSocket error: ' + err.message);
+              };
+              window.location.href = "inventory.html";
+          } else {
+              addMessage('Login failed: ' + (data.message || 'Unknown error'));
+          }
+        } catch (error) {
+          addMessage('Error: ' + error.message);
+        }
+    });
+  </script>
+
+</body>
+</html>
